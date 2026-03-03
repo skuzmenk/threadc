@@ -5,7 +5,10 @@ namespace threaddemo
 {
     class Program
     {
-        private int threadsCount = 3; 
+        private int threadsCount = 10;
+
+        private static SemaphoreSlim semaphore = new SemaphoreSlim(8);
+
         static void Main(string[] args)
         {
             (new Program()).Start();
@@ -13,8 +16,6 @@ namespace threaddemo
 
         void Start()
         {
-             Thread stopperThread = new Thread(Stoper);
-            stopperThread.Start();
             for (int i = 1; i <= threadsCount; i++)
             {
                 int threadId = i;
@@ -25,25 +26,30 @@ namespace threaddemo
 
         void Calculator(int threadId)
         {
+            semaphore.Wait();
+
+            bool canStop = false;
+
+            new Thread(() =>
+            {
+                Thread.Sleep(30 * 1000);
+                canStop = true;
+            }).Start();
+
             long sum = 0;
-            long count=0;
-            long step=2;
+            long count = 0;
+            long step = 2;
+
             do
             {
-                sum+=step;
+                sum += step;
                 count++;
-            } while (!canStop);
-            Console.WriteLine(threadId+" - " + sum + " - " + count);
-        }
+            }
+            while (!canStop);
 
-        private bool canStop = false;
+            Console.WriteLine(threadId + " - " + sum + " - " + count);
 
-        public bool CanStop { get => canStop; }
-
-        public void Stoper()
-        {
-            Thread.Sleep(30 * 1000);
-            canStop = true;
+            semaphore.Release();
         }
     }
 }
