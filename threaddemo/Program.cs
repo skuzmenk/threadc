@@ -1,49 +1,84 @@
-﻿using System.Threading;
-using System;
+﻿using System;
+using System.Threading;
 
 namespace threaddemo
 {
     class Program
     {
-        private int threadsCount = 4;
+        private int threadsCount = 8;
+        private static Random random = new Random();
+
+        private bool[] canStop;
+        private int[] startTimes;
+        private int[] workTimes;
+
         static void Main(string[] args)
         {
-            (new Program()).Start();
+            new Program().Start();
         }
 
         void Start()
         {
-            Thread stopperThread = new Thread(Stoper);
-            stopperThread.Start();
-            for (int i = 1; i <= threadsCount; i++)
+            canStop = new bool[threadsCount];
+            startTimes = new int[threadsCount];
+            workTimes = new int[threadsCount];
+            for (int i = 0; i < threadsCount; i++)
             {
-                int threadId = i;
-                Thread t = new Thread(() => Calculator(threadId));
+                workTimes[i] = random.Next(5000, 10001);
+            }
+
+            for (int i = 0; i < threadsCount; i++)
+            {
+                int id = i;
+
+                startTimes[i] = Environment.TickCount;
+
+                Thread t = new Thread(() => Calculator(id));
                 t.Start();
+            }
+            Thread controller = new Thread(Controller);
+            controller.Start();
+        }
+        void Controller()
+        {
+            bool allStopped = false;
+
+            while (!allStopped)
+            {
+                allStopped = true;
+
+                for (int i = 0; i < threadsCount; i++)
+                {
+                    if (!canStop[i])
+                    {
+                        allStopped = false;
+
+                        int worked = Environment.TickCount - startTimes[i];
+
+                        if (worked >= workTimes[i])
+                        {
+                            canStop[i] = true;
+                        }
+                    }
+                }
             }
         }
 
-        void Calculator(int threadId)
+        void Calculator(int id)
         {
             long sum = 0;
             long count = 0;
             long step = 2;
-            do
+
+            while (!canStop[id])
             {
                 sum += step;
                 count++;
-            } while (!canStop);
-            Console.WriteLine(threadId + " - " + sum + " - " + count);
-        }
+            }
 
-        private bool canStop = false;
-
-        public bool CanStop { get => canStop; }
-
-        public void Stoper()
-        {
-            Thread.Sleep(30 * 1000);
-            canStop = true;
+            Console.WriteLine(
+                $"Thread {id + 1}  sum={sum}  count={count}"
+            );
         }
     }
 }
