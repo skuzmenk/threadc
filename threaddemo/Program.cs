@@ -24,7 +24,7 @@ namespace threaddemo
             workTimes = new int[threadsCount];
             for (int i = 0; i < threadsCount; i++)
             {
-                workTimes[i] = random.Next(5000, 10001);
+                workTimes[i] = random.Next(5000, 15001);
             }
 
             for (int i = 0; i < threadsCount; i++)
